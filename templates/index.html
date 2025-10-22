@@ -231,6 +231,43 @@
             background: #00a383;
         }
 
+        .control-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pause-btn {
+            background: #f39c12;
+            color: white;
+        }
+
+        .pause-btn:hover {
+            background: #e67e22;
+        }
+
+        .resume-btn {
+            background: #27ae60;
+            color: white;
+        }
+
+        .resume-btn:hover {
+            background: #229954;
+        }
+
+        .cancel-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .cancel-btn:hover {
+            background: #c0392b;
+        }
+
         .file-info {
             display: flex;
             gap: 10px;
@@ -339,11 +376,34 @@
 
         const activeDownloads = new Map();
 
+        // Auto-detect filename from URL
+        urlInput.addEventListener('input', function() {
+            if (!filenameInput.value && urlInput.value) {
+                // Try to extract a meaningful name from URL
+                const url = urlInput.value;
+                let autoName = 'video';
+                
+                // Try to find quality indicator
+                const qualityMatch = url.match(/\/(1080|720|480|360|240)\//);
+                if (qualityMatch) {
+                    autoName = `video-${qualityMatch[1]}p`;
+                }
+                
+                // Try to find any meaningful path segment
+                const pathMatch = url.match(/\/([a-zA-Z0-9-_]+)\/[^\/]*\.m3u8/);
+                if (pathMatch && pathMatch[1] !== 'index') {
+                    autoName = pathMatch[1];
+                }
+                
+                filenameInput.placeholder = autoName;
+            }
+        });
+
         downloadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             let url = urlInput.value.trim();
-            const filename = filenameInput.value.trim() || 'video';
+            const filename = filenameInput.value.trim() || filenameInput.placeholder || 'video';
             const quality = qualitySelect.value;
 
             if (!url) {
@@ -409,13 +469,45 @@
                     <div class="download-filename">${filename}.mp4</div>
                     <span class="status-badge status-queued">Queued</span>
                 </div>
+                <div class="download-progress">
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: 0%"></div>
                 </div>
-                <div class="progress-text">Waiting to start...</div>
-            `;
+                <div class="progress-text">Queued...</div>
+            </div>
+            
+            <div class="download-controls" style="margin-top: 10px; display: flex; gap: 10px;">
+                <button class="control-btn pause-btn" style="display: none;">⏸️ Pause</button>
+                <button class="control-btn resume-btn" style="display: none;">▶️ Resume</button>
+                <button class="control-btn cancel-btn">❌ Cancel</button>
+            </div>`;
 
             downloadsList.insertBefore(item, downloadsList.firstChild);
+            
+            // Add button click handlers
+            const cancelBtn = item.querySelector('.cancel-btn');
+            const pauseBtn = item.querySelector('.pause-btn');
+            const resumeBtn = item.querySelector('.resume-btn');
+            
+            cancelBtn.addEventListener('click', () => {
+                if (confirm('Cancel this download?')) {
+                    // Stop polling
+                    if (activeDownloads.has(downloadId)) {
+                        clearInterval(activeDownloads.get(downloadId));
+                        activeDownloads.delete(downloadId);
+                    }
+                    // Remove item
+                    item.remove();
+                }
+            });
+            
+            pauseBtn.addEventListener('click', () => {
+                alert('⏸️ Pause feature coming soon!\n\nFor now, you can cancel and restart the download.');
+            });
+            
+            resumeBtn.addEventListener('click', () => {
+                alert('▶️ Resume feature coming soon!\n\nFor now, you can start a new download.');
+            });
         }
 
         function startStatusPolling(downloadId) {
@@ -445,6 +537,9 @@
             const statusBadge = item.querySelector('.status-badge');
             const progressFill = item.querySelector('.progress-fill');
             const progressText = item.querySelector('.progress-text');
+            const pauseBtn = item.querySelector('.pause-btn');
+            const resumeBtn = item.querySelector('.resume-btn');
+            const cancelBtn = item.querySelector('.cancel-btn');
 
             // Update status badge
             statusBadge.className = `status-badge status-${data.status}`;
@@ -454,10 +549,34 @@
             const percent = data.percent || 0;
             progressFill.style.width = `${percent}%`;
             
+            // Show/hide control buttons based on status
             if (data.status === 'downloading') {
-                progressText.innerHTML = `<span class="spinner"></span>${data.progress}`;
+                progressText.textContent = data.progress || 'Downloading...';
+                pauseBtn.style.display = 'inline-block';
+                resumeBtn.style.display = 'none';
+                cancelBtn.style.display = 'inline-block';
+            } else if (data.status === 'paused') {
+                progressText.textContent = 'Paused';
+                pauseBtn.style.display = 'none';
+                resumeBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'inline-block';
+            } else if (data.status === 'completed') {
+                progressText.textContent = 'Download completed!';
+                progressFill.style.width = '100%';
+                pauseBtn.style.display = 'none';
+                resumeBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
+            } else if (data.status === 'error') {
+                progressText.textContent = data.progress || 'Download failed';
+                progressFill.style.width = '0%';
+                pauseBtn.style.display = 'none';
+                resumeBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
             } else {
-                progressText.textContent = data.progress;
+                progressText.textContent = data.progress || 'Queued...';
+                pauseBtn.style.display = 'none';
+                resumeBtn.style.display = 'none';
+                cancelBtn.style.display = 'inline-block';
             }
 
             // Add file info and download button if completed
