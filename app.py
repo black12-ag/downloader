@@ -87,17 +87,25 @@ def download_video(download_id, url, filename, quality='best'):
             # Find the downloaded file - check multiple locations and extensions
             downloaded_file = None
             
-            # Try exact path first
-            if output_path.with_suffix('.mp4').exists():
-                downloaded_file = output_path.with_suffix('.mp4')
-            else:
-                # Search in download directory for ANY video file (yt-dlp may change the name)
+            # First, try common extensions with exact filename
+            for ext in ['.mp4', '.mkv', '.webm', '.avi', '.m4v', '.ts', '.flv']:
+                test_path = output_path.with_suffix(ext)
+                if test_path.exists():
+                    downloaded_file = test_path
+                    break
+            
+            # If not found, search entire directory for ANY video file
+            if not downloaded_file:
                 all_files = list(DOWNLOAD_DIR.glob("*"))
-                video_files = [f for f in all_files if f.is_file() and f.suffix in ['.mp4', '.mkv', '.webm', '.avi', '.m4v', '.ts']]
+                video_files = [f for f in all_files 
+                              if f.is_file() 
+                              and f.suffix.lower() in ['.mp4', '.mkv', '.webm', '.avi', '.m4v', '.ts', '.flv', '.m4a']
+                              and f.stat().st_size > 1024]  # At least 1KB
                 
                 if video_files:
                     # Get the most recently modified video file
                     downloaded_file = max(video_files, key=lambda f: f.stat().st_mtime)
+                    print(f"Found file: {downloaded_file.name} ({downloaded_file.stat().st_size} bytes)")
             
             if downloaded_file:
                 # Get file size and format
@@ -121,7 +129,9 @@ def download_video(download_id, url, filename, quality='best'):
                 downloads[download_id]['status'] = 'error'
                 # List what files ARE in the directory for debugging
                 files_in_dir = list(DOWNLOAD_DIR.glob('*'))
-                downloads[download_id]['progress'] = f'File not found. Expected: {output_path.stem}. Found {len(files_in_dir)} files in dir'
+                file_names = [f.name for f in files_in_dir if f.is_file()]
+                downloads[download_id]['progress'] = f'File not found. Expected: {output_path.stem}. Found files: {", ".join(file_names) if file_names else "none"}'
+                print(f"ERROR: Expected {output_path.stem}, found: {file_names}")
         else:
             downloads[download_id]['status'] = 'error'
             error_detail = error_messages[-1] if error_messages else 'Download failed'
