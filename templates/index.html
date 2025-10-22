@@ -292,12 +292,13 @@
 <body>
     <div class="container">
         <h1>🎬 Video Downloader</h1>
-        <p class="subtitle">Paste video link and download - Simple!</p>
+        <p class="subtitle">Paste m3u8 link and download!</p>
 
         <form id="downloadForm">
             <div class="input-group">
                 <label for="url">Video URL (m3u8 link)</label>
-                <input type="text" id="url" placeholder="Paste your video link here" required>
+                <input type="text" id="url" placeholder="https://example.com/.../360/index.m3u8" required>
+                <small style="color: #666; font-size: 12px;">💡 Paste any quality URL - you can change quality below</small>
             </div>
 
             <div class="input-group">
@@ -306,14 +307,15 @@
             </div>
 
             <div class="input-group">
-                <label for="quality">Quality</label>
+                <label for="quality">Choose Quality</label>
                 <select id="quality">
-                    <option value="best">🌟 Best Quality</option>
-                    <option value="1080p">🎥 1080p (Full HD)</option>
-                    <option value="720p">📹 720p (HD)</option>
-                    <option value="480p">📱 480p</option>
-                    <option value="360p">💾 360p (Smaller)</option>
+                    <option value="same">📥 Same as URL (Keep original)</option>
+                    <option value="1080">🎥 1080p (Full HD)</option>
+                    <option value="720">📹 720p (HD)</option>
+                    <option value="480">📱 480p</option>
+                    <option value="360">💾 360p</option>
                 </select>
+                <small style="color: #666; font-size: 12px;">💡 Select "Same as URL" or try a different quality</small>
             </div>
 
             <button type="submit" id="downloadBtn">⬇️ Download Video</button>
@@ -340,13 +342,23 @@
         downloadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const url = urlInput.value.trim();
+            let url = urlInput.value.trim();
             const filename = filenameInput.value.trim() || 'video';
             const quality = qualitySelect.value;
 
             if (!url) {
                 alert('Please paste a video URL');
                 return;
+            }
+
+            // If user selected a different quality, try to change it in the URL
+            if (quality !== 'same') {
+                // Try to replace quality in URL (e.g., /360/ -> /720/)
+                const qualityPattern = /\/(1080|720|480|360|240)\//;
+                if (qualityPattern.test(url)) {
+                    url = url.replace(qualityPattern, `/${quality}/`);
+                    console.log('Changed URL to:', url);
+                }
             }
 
             downloadBtn.disabled = true;
@@ -358,7 +370,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ url, filename, quality })
+                    body: JSON.stringify({ url, filename, quality: 'best' })
                 });
 
                 const data = await response.json();

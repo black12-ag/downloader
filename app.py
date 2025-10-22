@@ -29,22 +29,9 @@ def download_video(download_id, url, filename, quality='best'):
         output_path = DOWNLOAD_DIR / filename
         output_template = str(output_path.with_suffix(''))
         
-        # Check if quality is a specific format ID (numeric) or a preset
-        if quality.isdigit():
-            # Specific format ID selected
-            format_string = f'{quality}+bestaudio/best'
-        else:
-            # Quality preset
-            quality_formats = {
-                'best': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                '2160p': 'bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/best[height<=2160]',
-                '1080p': 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]',
-                '720p': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]',
-                '480p': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]',
-                '360p': 'bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/best[height<=360]',
-                '240p': 'bestvideo[height<=240][ext=mp4]+bestaudio[ext=m4a]/best[height<=240]',
-            }
-            format_string = quality_formats.get(quality, quality_formats['best'])
+        # For direct m3u8 streams, just use 'best' - the quality is in the URL itself
+        # The user already selected the quality when they got the m3u8 URL (360, 720, 1080, etc.)
+        format_string = 'best'
         
         # Use yt-dlp to download with selected quality
         command = [
