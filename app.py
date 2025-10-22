@@ -17,6 +17,7 @@ app = Flask(__name__)
 # Store download status and processes
 downloads = {}
 download_processes = {}  # Store subprocess objects for cancellation
+download_threads = {}  # Store thread objects
 
 DOWNLOAD_DIR = Path("/tmp/downloads")  # Use /tmp on Render (writable)
 DOWNLOAD_DIR.mkdir(exist_ok=True, parents=True)
@@ -265,6 +266,46 @@ def get_status(download_id):
         return jsonify({'error': 'Download not found'}), 404
     
     return jsonify(downloads[download_id])
+
+@app.route('/pause/<download_id>', methods=['POST'])
+def pause_download(download_id):
+    """Pause an active download"""
+    if download_id not in downloads:
+        return jsonify({'error': 'Download not found'}), 404
+    
+    # Pause the process if it's running
+    if download_id in download_processes:
+        try:
+            import signal
+            process = download_processes[download_id]
+            process.send_signal(signal.SIGSTOP)  # Pause the process
+            downloads[download_id]['status'] = 'paused'
+            downloads[download_id]['progress'] = 'Download paused'
+            return jsonify({'success': True, 'message': 'Download paused'})
+        except Exception as e:
+            return jsonify({'error': f'Failed to pause: {str(e)}'}), 500
+    
+    return jsonify({'error': 'No active process to pause'}), 400
+
+@app.route('/resume/<download_id>', methods=['POST'])
+def resume_download(download_id):
+    """Resume a paused download"""
+    if download_id not in downloads:
+        return jsonify({'error': 'Download not found'}), 404
+    
+    # Resume the process if it's paused
+    if download_id in download_processes:
+        try:
+            import signal
+            process = download_processes[download_id]
+            process.send_signal(signal.SIGCONT)  # Resume the process
+            downloads[download_id]['status'] = 'downloading'
+            downloads[download_id]['progress'] = 'Download resumed'
+            return jsonify({'success': True, 'message': 'Download resumed'})
+        except Exception as e:
+            return jsonify({'error': f'Failed to resume: {str(e)}'}), 500
+    
+    return jsonify({'error': 'No paused process to resume'}), 400
 
 @app.route('/cancel/<download_id>', methods=['POST'])
 def cancel_download(download_id):

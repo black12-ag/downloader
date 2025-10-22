@@ -542,16 +542,46 @@
                 }
             });
             
-            pauseBtn.addEventListener('click', () => {
-                // Pause feature - just disable button for now
-                pauseBtn.disabled = true;
-                pauseBtn.style.opacity = '0.5';
+            pauseBtn.addEventListener('click', async () => {
+                try {
+                    pauseBtn.disabled = true;
+                    const response = await fetch(`/pause/${downloadId}`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        // Status will update via polling
+                        console.log('Download paused');
+                    } else {
+                        const data = await response.json();
+                        console.error('Pause failed:', data.error);
+                        pauseBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Pause error:', error);
+                    pauseBtn.disabled = false;
+                }
             });
             
-            resumeBtn.addEventListener('click', () => {
-                // Resume feature - just disable button for now
-                resumeBtn.disabled = true;
-                resumeBtn.style.opacity = '0.5';
+            resumeBtn.addEventListener('click', async () => {
+                try {
+                    resumeBtn.disabled = true;
+                    const response = await fetch(`/resume/${downloadId}`, {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        // Status will update via polling
+                        console.log('Download resumed');
+                    } else {
+                        const data = await response.json();
+                        console.error('Resume failed:', data.error);
+                        resumeBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Resume error:', error);
+                    resumeBtn.disabled = false;
+                }
             });
         }
 
@@ -617,12 +647,16 @@
                 
                 progressText.textContent = progressDisplay;
                 pauseBtn.style.display = 'inline-block';
+                pauseBtn.disabled = false;
+                pauseBtn.style.opacity = '1';
                 resumeBtn.style.display = 'none';
                 cancelBtn.style.display = 'inline-block';
             } else if (data.status === 'paused') {
-                progressText.textContent = 'Paused';
+                progressText.textContent = '⏸️ Paused - Click Resume to continue';
                 pauseBtn.style.display = 'none';
                 resumeBtn.style.display = 'inline-block';
+                resumeBtn.disabled = false;
+                resumeBtn.style.opacity = '1';
                 cancelBtn.style.display = 'inline-block';
             } else if (data.status === 'completed') {
                 progressText.textContent = 'Download completed!';
