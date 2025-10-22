@@ -455,24 +455,34 @@
                     body: JSON.stringify({ url, filename, quality: 'best' })
                 });
 
-                const data = await response.json();
-
                 if (response.ok) {
-                    const downloadId = data.download_id;
-                    addDownloadItem(downloadId, filename, url);
-                    startStatusPolling(downloadId);
-
-                    // Clear form
+                    const data = await response.json();
+                    
+                    // Start direct stream download - NO DOUBLE DOWNLOAD!
+                    const streamUrl = data.stream_url;
+                    const link = document.createElement('a');
+                    link.href = streamUrl;
+                    link.download = data.filename;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    alert('✅ Download started! Check your Downloads folder.\n\n⚡ Only using 1x network, not 2x!');
+                    
+                    // Reset form
                     urlInput.value = '';
                     filenameInput.value = '';
                 } else {
-                    alert(data.error || 'Failed to start download');
+                    const error = await response.json();
+                    alert(`Error: ${error.error || 'Download failed'}`);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Download error:', error);
+                alert('Failed to start download');
             } finally {
                 downloadBtn.disabled = false;
-                downloadBtn.textContent = 'Download Video';
+                downloadBtn.textContent = '⬇️ Download Video';
             }
         });
 

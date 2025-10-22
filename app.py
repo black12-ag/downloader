@@ -246,8 +246,8 @@ def check_formats():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/download', methods=['POST'])
-def start_download():
-    """Start a new download"""
+def download():
+    """Start a new download - streams directly to browser"""
     data = request.json
     url = data.get('url', '').strip()
     filename = data.get('filename', 'video').strip()
@@ -260,25 +260,60 @@ def start_download():
     if not filename.endswith('.mp4'):
         filename += '.mp4'
     
-    # Generate unique download ID
-    download_id = str(uuid.uuid4())
+    # Return the URL and filename - browser will call /stream endpoint
+    return jsonify({
+        'stream_url': f'/stream?url={url}&filename={filename}',
+        'filename': filename
+    })
+
+@app.route('/stream')
+def stream_video():
+    """Stream video directly to browser - NO DOUBLE DOWNLOAD!"""
+    url = request.args.get('url', '').strip()
+    filename = request.args.get('filename', 'video.mp4').strip()
     
-    # Initialize download status
-    downloads[download_id] = {
-        'status': 'queued',
-        'progress': 'Queued...',
-        'percent': 0,
-        'url': url,
-        'filename': filename,
-        'quality': quality
-    }
+    if not url:
+        return jsonify({'error': 'URL is required'}), 400
     
-    # Start download in background thread
-    thread = threading.Thread(target=download_video, args=(download_id, url, filename, quality))
-    thread.daemon = True
-    thread.start()
+    def generate():
+        """Stream yt-dlp output directly to browser"""
+        command = [
+            'python3', '-m', 'yt_dlp',
+            '--no-check-certificate',
+            '-f', 'best',
+            '--merge-output-format', 'mp4',
+            '--concurrent-fragments', '16',
+            '--buffer-size', '16K',
+            '--http-chunk-size', '10M',
+            '--retries', '10',
+            '--fragment-retries', '10',
+            '-o', '-',  # Output to stdout!
+            url
+        ]
+        
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL
+        )
+        
+        # Stream the output
+        while True:
+            chunk = process.stdout.read(8192)  # Read 8KB at a time
+            if not chunk:
+                break
+            yield chunk
+        
+        process.wait()
     
-    return jsonify({'download_id': download_id})
+    return app.response_class(
+        generate(),
+        mimetype='video/mp4',
+        headers={
+            'Content-Disposition': f'attachment; filename="{filename}"',
+            'Cache-Control': 'no-cache'
+        }
+    )
 
 @app.route('/status/<download_id>')
 def get_status(download_id):
