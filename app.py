@@ -4,7 +4,7 @@ Web-based Video Downloader
 A Flask web application to download videos from any URL
 """
 
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, Response
 import subprocess
 import os
 import uuid
@@ -13,6 +13,7 @@ import threading
 import time
 
 app = Flask(__name__)
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Disable caching
 
 # Store download status and processes
 downloads = {}
@@ -295,24 +296,34 @@ def stream_video():
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.PIPE,
+            bufsize=0  # No buffering - stream immediately
         )
         
-        # Stream the output
-        while True:
-            chunk = process.stdout.read(8192)  # Read 8KB at a time
-            if not chunk:
-                break
-            yield chunk
-        
-        process.wait()
+        # Stream the output - larger chunks for faster transfer
+        try:
+            while True:
+                chunk = process.stdout.read(65536)  # Read 64KB at a time (larger chunks)
+                if not chunk:
+                    break
+                yield chunk
+        except Exception as e:
+            print(f"Streaming error: {e}")
+        finally:
+            # Make sure process completes
+            process.wait()
+            if process.returncode != 0:
+                error = process.stderr.read().decode('utf-8', errors='ignore')
+                print(f"yt-dlp error: {error}")
     
     return app.response_class(
         generate(),
         mimetype='video/mp4',
         headers={
             'Content-Disposition': f'attachment; filename="{filename}"',
-            'Cache-Control': 'no-cache'
+            'Content-Type': 'video/mp4',
+            'Cache-Control': 'no-cache',
+            'X-Content-Type-Options': 'nosniff'
         }
     )
 
