@@ -376,13 +376,14 @@
             <button type="submit" id="downloadBtn">⬇️ Download Video</button>
         </form>
 
-        <div class="downloads-section" style="text-align: center; padding: 40px 20px;">
-            <h2 style="color: #667eea; margin-bottom: 15px;">⚡ Direct Streaming Download</h2>
-            <p style="color: #666; font-size: 15px; line-height: 1.6;">
-                Videos stream directly to your browser!<br>
-                <strong>Only uses 1x network bandwidth</strong> (not 2x)<br>
-                Check your Downloads folder after clicking Download Video
-            </p>
+        <div class="downloads-section">
+            <h2 class="section-title">Downloads</h2>
+            <div style="background: #e8f4f8; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">
+                <strong>💡 How it works:</strong> Video downloads to server first (you see progress), then automatically downloads to your Mac when complete!
+            </div>
+            <div id="downloadsList">
+                <div class="empty-state">No downloads yet. Enter a URL above to start!</div>
+            </div>
         </div>
     </div>
 
@@ -455,50 +456,11 @@
                     const data = await response.json();
                     const downloadId = data.download_id;
                     
-                    // Show downloading status
-                    downloadBtn.textContent = '⏳ Downloading...';
-                    downloadBtn.style.background = '#f39c12';
+                    // Add download item to list
+                    addDownloadItem(downloadId, filename);
                     
-                    // Poll for status
-                    const pollInterval = setInterval(async () => {
-                        try {
-                            const statusRes = await fetch(`/status/${downloadId}`);
-                            const status = await statusRes.json();
-                            
-                            if (status.status === 'completed') {
-                                clearInterval(pollInterval);
-                                
-                                // Auto-download file
-                                const link = document.createElement('a');
-                                link.href = `/download-file/${downloadId}`;
-                                link.download = status.filename || 'video.mp4';
-                                link.style.display = 'none';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                
-                                // Show success
-                                downloadBtn.textContent = '✅ Downloaded!';
-                                downloadBtn.style.background = '#00b894';
-                                
-                                setTimeout(() => {
-                                    downloadBtn.textContent = '⬇️ Download Video';
-                                    downloadBtn.style.background = '';
-                                }, 3000);
-                            } else if (status.status === 'error') {
-                                clearInterval(pollInterval);
-                                downloadBtn.textContent = '❌ Failed';
-                                downloadBtn.style.background = '#e74c3c';
-                                
-                                setTimeout(() => {
-                                    downloadBtn.textContent = '⬇️ Download Video';
-                                    downloadBtn.style.background = '';
-                                }, 3000);
-                            }
-                        } catch (err) {
-                            console.error('Status poll error:', err);
-                        }
-                    }, 2000);  // Check every 2 seconds
+                    // Start polling for status
+                    startStatusPolling(downloadId);
                     
                     // Reset form
                     urlInput.value = '';
@@ -515,6 +477,105 @@
                 downloadBtn.textContent = '⬇️ Download Video';
             }
         });
+
+        function addDownloadItem(downloadId, filename) {
+            // Remove empty state
+            const emptyState = downloadsList.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const item = document.createElement('div');
+            item.className = 'download-item';
+            item.id = `download-${downloadId}`;
+            item.innerHTML = `
+                <div class="download-header">
+                    <div class="download-filename">${filename}.mp4</div>
+                    <span class="status-badge status-queued">Queued</span>
+                </div>
+                <div class="download-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">Queued...</div>
+                </div>`;
+
+            downloadsList.insertBefore(item, downloadsList.firstChild);
+        }
+
+        function startStatusPolling(downloadId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/status/${downloadId}`);
+                    const data = await response.json();
+
+                    updateDownloadItem(downloadId, data);
+
+                    if (data.status === 'completed' || data.status === 'error') {
+                        clearInterval(interval);
+                        
+                        // Auto-download if completed
+                        if (data.status === 'completed') {
+                            setTimeout(() => {
+                                const link = document.createElement('a');
+                                link.href = `/download-file/${downloadId}`;
+                                link.download = data.filename || 'video.mp4';
+                                link.style.display = 'none';
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }, 1000);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Status poll error:', error);
+                }
+            }, 2000);
+        }
+
+        function updateDownloadItem(downloadId, data) {
+            const item = document.getElementById(`download-${downloadId}`);
+            if (!item) return;
+
+            const statusBadge = item.querySelector('.status-badge');
+            const progressFill = item.querySelector('.progress-fill');
+            const progressText = item.querySelector('.progress-text');
+
+            // Update status badge
+            statusBadge.className = `status-badge status-${data.status}`;
+            statusBadge.textContent = data.status;
+
+            // Update progress
+            const percent = data.percent || 0;
+            progressFill.style.width = `${percent}%`;
+            
+            if (data.status === 'downloading') {
+                let progressDisplay = data.progress || 'Downloading...';
+                
+                // Parse progress info
+                if (progressDisplay.includes('[download]')) {
+                    const match = progressDisplay.match(/(\d+\.\d+)%.*?([\d.]+)(\w+).*?([\d.]+\w+\/s).*?ETA\s+([\d:]+)/);
+                    if (match) {
+                        const [_, percent, totalSize, unit, speed, eta] = match;
+                        const percentNum = parseFloat(percent);
+                        const totalNum = parseFloat(totalSize);
+                        const downloaded = (totalNum * percentNum / 100).toFixed(2);
+                        
+                        progressDisplay = `📊 ${percent}% • 📦 ${downloaded}${unit} / ${totalSize}${unit} • ⚡ ${speed} • ⏱️ ${eta}`;
+                    }
+                }
+                
+                progressText.textContent = progressDisplay;
+            } else if (data.status === 'completed') {
+                progressText.textContent = '✅ Download completed! File will download to your Mac...';
+                progressFill.style.width = '100%';
+            } else if (data.status === 'error') {
+                progressText.textContent = data.progress || 'Download failed';
+                progressFill.style.width = '0%';
+            } else {
+                progressText.textContent = data.progress || 'Queued...';
+            }
+        }
     </script>
 </body>
 </html>
