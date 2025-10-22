@@ -94,12 +94,13 @@ def download_video(download_id, url, filename, quality='best'):
                     downloaded_file = test_path
                     break
             
-            # If not found, search entire directory for ANY video file
+            # If not found, search entire directory for ANY video file (including files without extensions!)
             if not downloaded_file:
                 all_files = list(DOWNLOAD_DIR.glob("*"))
                 video_files = [f for f in all_files 
                               if f.is_file() 
-                              and f.suffix.lower() in ['.mp4', '.mkv', '.webm', '.avi', '.m4v', '.ts', '.flv', '.m4a']
+                              and (f.suffix.lower() in ['.mp4', '.mkv', '.webm', '.avi', '.m4v', '.ts', '.flv', '.m4a', '']  # Include no extension!
+                                   or f.suffix == '')  # Files without extension
                               and f.stat().st_size > 1024]  # At least 1KB
                 
                 if video_files:
@@ -110,7 +111,7 @@ def download_video(download_id, url, filename, quality='best'):
             if downloaded_file:
                 # Get file size and format
                 file_size = downloaded_file.stat().st_size
-                file_ext = downloaded_file.suffix.upper().replace('.', '')
+                file_ext = downloaded_file.suffix.upper().replace('.', '') if downloaded_file.suffix else 'MP4'
                 
                 # Format file size
                 if file_size < 1024 * 1024:  # Less than 1 MB
