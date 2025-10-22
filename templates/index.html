@@ -215,10 +215,15 @@
         }
 
         .progress-text {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-            word-break: break-all;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
         }
 
         .download-button {
@@ -538,11 +543,15 @@
             });
             
             pauseBtn.addEventListener('click', () => {
-                alert('⏸️ Pause feature coming soon!\n\nFor now, you can cancel and restart the download.');
+                // Pause feature - just disable button for now
+                pauseBtn.disabled = true;
+                pauseBtn.style.opacity = '0.5';
             });
             
             resumeBtn.addEventListener('click', () => {
-                alert('▶️ Resume feature coming soon!\n\nFor now, you can start a new download.');
+                // Resume feature - just disable button for now
+                resumeBtn.disabled = true;
+                resumeBtn.style.opacity = '0.5';
             });
         }
 
@@ -587,7 +596,20 @@
             
             // Show/hide control buttons based on status
             if (data.status === 'downloading') {
-                progressText.textContent = data.progress || 'Downloading...';
+                // Parse and format the progress text nicely
+                let progressDisplay = data.progress || 'Downloading...';
+                
+                // Extract key info from yt-dlp output
+                if (progressDisplay.includes('[download]')) {
+                    // Format: [download] 13.9% of ~ 308.60MiB at 2.45MiB/s ETA 01:46 (frag 105/759)
+                    const match = progressDisplay.match(/(\d+\.\d+)%.*?([\d.]+\w+).*?([\d.]+\w+\/s).*?ETA\s+([\d:]+)/);
+                    if (match) {
+                        const [_, percent, size, speed, eta] = match;
+                        progressDisplay = `📊 ${percent}% • 📦 ${size} • ⚡ ${speed} • ⏱️ ${eta}`;
+                    }
+                }
+                
+                progressText.textContent = progressDisplay;
                 pauseBtn.style.display = 'inline-block';
                 resumeBtn.style.display = 'none';
                 cancelBtn.style.display = 'inline-block';
