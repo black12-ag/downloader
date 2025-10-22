@@ -18,8 +18,8 @@ app = Flask(__name__)
 downloads = {}
 download_processes = {}  # Store subprocess objects for cancellation
 
-DOWNLOAD_DIR = Path("downloads")
-DOWNLOAD_DIR.mkdir(exist_ok=True)
+DOWNLOAD_DIR = Path("/tmp/downloads")  # Use /tmp on Render (writable)
+DOWNLOAD_DIR.mkdir(exist_ok=True, parents=True)
 
 def download_video(download_id, url, filename, quality='best'):
     """Background task to download video"""
@@ -83,13 +83,18 @@ def download_video(download_id, url, filename, quality='best'):
         process.wait()
         
         if process.returncode == 0:
-            # Find the downloaded file
+            # Find the downloaded file - check multiple locations and extensions
             downloaded_file = None
-            for ext in ['.mp4', '.mkv', '.webm', '.avi']:
-                test_path = output_path.with_suffix(ext)
-                if test_path.exists():
-                    downloaded_file = test_path
-                    break
+            
+            # Try exact path first
+            if output_path.with_suffix('.mp4').exists():
+                downloaded_file = output_path.with_suffix('.mp4')
+            else:
+                # Search in download directory for any file with similar name
+                for file in DOWNLOAD_DIR.glob(f"{output_path.stem}*"):
+                    if file.is_file() and file.suffix in ['.mp4', '.mkv', '.webm', '.avi', '.m4v']:
+                        downloaded_file = file
+                        break
             
             if downloaded_file:
                 # Get file size and format
@@ -111,7 +116,9 @@ def download_video(download_id, url, filename, quality='best'):
                 downloads[download_id]['progress'] = f'Download completed! ({size_str}, {file_ext})'
             else:
                 downloads[download_id]['status'] = 'error'
-                downloads[download_id]['progress'] = 'File not found after download'
+                # List what files ARE in the directory for debugging
+                files_in_dir = list(DOWNLOAD_DIR.glob('*'))
+                downloads[download_id]['progress'] = f'File not found. Expected: {output_path.stem}. Found {len(files_in_dir)} files in dir'
         else:
             downloads[download_id]['status'] = 'error'
             error_detail = error_messages[-1] if error_messages else 'Download failed'
