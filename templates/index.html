@@ -677,33 +677,7 @@
                 cancelBtn.style.display = 'inline-block';
             }
 
-            // Handle direct download (no double download!)
-            if (data.status === 'ready' && data.direct_url && !item.querySelector('.download-button')) {
-                // Direct download - browser downloads directly from source
-                progressText.textContent = '⚡ Starting direct download to your Mac...';
-                
-                const link = document.createElement('a');
-                link.href = data.direct_url;
-                link.download = data.filename || 'video.mp4';
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                // Update status
-                statusBadge.className = 'status-badge status-completed';
-                statusBadge.textContent = 'downloading to mac';
-                progressText.textContent = '📥 Downloading directly to your Mac - check Downloads folder!';
-                progressFill.style.width = '100%';
-                
-                // Stop polling after starting download
-                if (activeDownloads.has(downloadId)) {
-                    clearInterval(activeDownloads.get(downloadId));
-                    activeDownloads.delete(downloadId);
-                }
-            }
-            
-            // Auto-download file when completed (server download fallback)
+            // Auto-download file when completed
             if (data.status === 'completed' && !item.querySelector('.download-button')) {
                 // Trigger automatic download
                 const downloadUrl = `/download-file/${downloadId}`;

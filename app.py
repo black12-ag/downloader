@@ -23,38 +23,11 @@ DOWNLOAD_DIR = Path("/tmp/downloads")  # Use /tmp on Render (writable)
 DOWNLOAD_DIR.mkdir(exist_ok=True, parents=True)
 
 def download_video(download_id, url, filename, quality='best'):
-    """Background task to download video - streams directly to user"""
+    """Background task to download video"""
     try:
-        downloads[download_id]['status'] = 'downloading'
-        downloads[download_id]['progress'] = 'Starting download...'
-        downloads[download_id]['url'] = url
-        downloads[download_id]['filename'] = filename
-        
-        # For direct streaming, we'll use yt-dlp to get the direct video URL
-        # Then the browser will download it directly (no double download!)
-        command = [
-            'python3', '-m', 'yt_dlp',
-            '--no-check-certificate',
-            '-g',  # Get direct URL only
-            url
-        ]
-        
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        
-        if result.returncode == 0 and result.stdout.strip():
-            # Got the direct video URL
-            direct_url = result.stdout.strip()
-            downloads[download_id]['status'] = 'ready'
-            downloads[download_id]['direct_url'] = direct_url
-            downloads[download_id]['progress'] = 'Ready to download - click to start'
-        else:
-            # Fallback to server download if we can't get direct URL
-            download_video_to_server(download_id, url, filename, quality)
+        # For m3u8 URLs, we need to download to server first
+        # (m3u8 streams can't be directly downloaded by browser)
+        download_video_to_server(download_id, url, filename, quality)
             
     except Exception as e:
         downloads[download_id]['status'] = 'error'
