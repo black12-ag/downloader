@@ -90,11 +90,13 @@ def download_video(download_id, url, filename, quality='best'):
             if output_path.with_suffix('.mp4').exists():
                 downloaded_file = output_path.with_suffix('.mp4')
             else:
-                # Search in download directory for any file with similar name
-                for file in DOWNLOAD_DIR.glob(f"{output_path.stem}*"):
-                    if file.is_file() and file.suffix in ['.mp4', '.mkv', '.webm', '.avi', '.m4v']:
-                        downloaded_file = file
-                        break
+                # Search in download directory for ANY video file (yt-dlp may change the name)
+                all_files = list(DOWNLOAD_DIR.glob("*"))
+                video_files = [f for f in all_files if f.is_file() and f.suffix in ['.mp4', '.mkv', '.webm', '.avi', '.m4v', '.ts']]
+                
+                if video_files:
+                    # Get the most recently modified video file
+                    downloaded_file = max(video_files, key=lambda f: f.stat().st_mtime)
             
             if downloaded_file:
                 # Get file size and format
