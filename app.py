@@ -288,7 +288,7 @@ def stream_video():
             '--retries', '10',
             '--fragment-retries', '10',
             '--write-sub',  # Download subtitles
-            '--sub-lang', 'en,ar,all',  # Try English, Arabic, or all available
+            '--sub-lang', 'en',  # Only English subtitles
             '--embed-subs',  # Embed subtitles in video
             '--fixup', 'detect_or_warn',  # Fix issues automatically
             '-o', '-',  # Output to stdout!
