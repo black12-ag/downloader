@@ -287,9 +287,6 @@ def stream_video():
             '--http-chunk-size', '10M',
             '--retries', '10',
             '--fragment-retries', '10',
-            '--write-sub',  # Download subtitles
-            '--sub-lang', 'en',  # Only English subtitles
-            '--embed-subs',  # Embed subtitles in video
             '--fixup', 'detect_or_warn',  # Fix issues automatically
             '-o', '-',  # Output to stdout!
             url
