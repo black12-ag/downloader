@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+downloads/
+*.mp4
+*.mkv
+*.webm
+*.avi
+*.mov
+.DS_Store
+*.part
+test_download.*
