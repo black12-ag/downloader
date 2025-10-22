@@ -392,18 +392,22 @@
                 if (response.ok) {
                     availableFormats = data.formats;
                     
-                    // Clear and populate format selector
-                    selectedFormatSelect.innerHTML = '';
-                    
-                    data.formats.forEach(fmt => {
-                        const option = document.createElement('option');
-                        option.value = fmt.format_id;
-                        option.textContent = `${fmt.resolution} (${fmt.height}p) - ${fmt.filesize_str} - ${fmt.ext.toUpperCase()}`;
-                        selectedFormatSelect.appendChild(option);
-                    });
+                    if (data.formats.length === 0) {
+                        alert(`This is a direct video stream.\n\nNo need to check formats - just click "Download Video" to download it!\n\nThe quality selector below will work automatically.`);
+                    } else {
+                        // Clear and populate format selector
+                        selectedFormatSelect.innerHTML = '';
+                        
+                        data.formats.forEach(fmt => {
+                            const option = document.createElement('option');
+                            option.value = fmt.format_id;
+                            option.textContent = `${fmt.resolution} (${fmt.height}p) - ${fmt.filesize_str} - ${fmt.ext.toUpperCase()}`;
+                            selectedFormatSelect.appendChild(option);
+                        });
 
-                    formatsList.style.display = 'block';
-                    alert(`Found ${data.formats.length} formats for: ${data.title}`);
+                        formatsList.style.display = 'block';
+                        alert(`Found ${data.formats.length} formats for: ${data.title}`);
+                    }
                 } else {
                     alert(data.error || 'Failed to check formats');
                 }
