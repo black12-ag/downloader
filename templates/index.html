@@ -602,10 +602,16 @@
                 // Extract key info from yt-dlp output
                 if (progressDisplay.includes('[download]')) {
                     // Format: [download] 13.9% of ~ 308.60MiB at 2.45MiB/s ETA 01:46 (frag 105/759)
-                    const match = progressDisplay.match(/(\d+\.\d+)%.*?([\d.]+\w+).*?([\d.]+\w+\/s).*?ETA\s+([\d:]+)/);
+                    const match = progressDisplay.match(/(\d+\.\d+)%.*?([\d.]+)(\w+).*?([\d.]+\w+\/s).*?ETA\s+([\d:]+)/);
                     if (match) {
-                        const [_, percent, size, speed, eta] = match;
-                        progressDisplay = `📊 ${percent}% • 📦 ${size} • ⚡ ${speed} • ⏱️ ${eta}`;
+                        const [_, percent, totalSize, unit, speed, eta] = match;
+                        
+                        // Calculate downloaded size
+                        const percentNum = parseFloat(percent);
+                        const totalNum = parseFloat(totalSize);
+                        const downloaded = (totalNum * percentNum / 100).toFixed(2);
+                        
+                        progressDisplay = `📊 ${percent}% • 📦 ${downloaded}${unit} / ${totalSize}${unit} • ⚡ ${speed} • ⏱️ ${eta}`;
                     }
                 }
                 
