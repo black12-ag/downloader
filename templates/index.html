@@ -677,8 +677,18 @@
                 cancelBtn.style.display = 'inline-block';
             }
 
-            // Add file info and download button if completed
+            // Auto-download file when completed
             if (data.status === 'completed' && !item.querySelector('.download-button')) {
+                // Trigger automatic download
+                const downloadUrl = `/download-file/${downloadId}`;
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = '';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
                 // Add file info badges
                 if (data.file_size || data.file_format) {
                     const fileInfo = document.createElement('div');
