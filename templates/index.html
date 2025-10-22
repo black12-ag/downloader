@@ -506,15 +506,34 @@
             const pauseBtn = item.querySelector('.pause-btn');
             const resumeBtn = item.querySelector('.resume-btn');
             
-            cancelBtn.addEventListener('click', () => {
+            cancelBtn.addEventListener('click', async () => {
                 if (confirm('Cancel this download?')) {
-                    // Stop polling
-                    if (activeDownloads.has(downloadId)) {
-                        clearInterval(activeDownloads.get(downloadId));
-                        activeDownloads.delete(downloadId);
+                    try {
+                        // Call cancel endpoint
+                        const response = await fetch(`/cancel/${downloadId}`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            // Stop polling
+                            if (activeDownloads.has(downloadId)) {
+                                clearInterval(activeDownloads.get(downloadId));
+                                activeDownloads.delete(downloadId);
+                            }
+                            // Remove item
+                            item.remove();
+                        } else {
+                            alert('Failed to cancel download');
+                        }
+                    } catch (error) {
+                        console.error('Cancel error:', error);
+                        // Still remove from UI
+                        if (activeDownloads.has(downloadId)) {
+                            clearInterval(activeDownloads.get(downloadId));
+                            activeDownloads.delete(downloadId);
+                        }
+                        item.remove();
                     }
-                    // Remove item
-                    item.remove();
                 }
             });
             

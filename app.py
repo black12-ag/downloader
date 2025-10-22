@@ -14,8 +14,9 @@ import time
 
 app = Flask(__name__)
 
-# Store download status
+# Store download status and processes
 downloads = {}
+download_processes = {}  # Store subprocess objects for cancellation
 
 DOWNLOAD_DIR = Path("downloads")
 DOWNLOAD_DIR.mkdir(exist_ok=True)
@@ -58,6 +59,9 @@ def download_video(download_id, url, filename, quality='best'):
             universal_newlines=True,
             cwd=str(Path.cwd())
         )
+        
+        # Store process for cancellation
+        download_processes[download_id] = process
         
         # Read output line by line
         error_messages = []
@@ -116,6 +120,10 @@ def download_video(download_id, url, filename, quality='best'):
     except Exception as e:
         downloads[download_id]['status'] = 'error'
         downloads[download_id]['progress'] = f'Error: {str(e)}'
+    finally:
+        # Clean up process reference
+        if download_id in download_processes:
+            del download_processes[download_id]
 
 @app.route('/')
 def index():
@@ -248,6 +256,30 @@ def get_status(download_id):
         return jsonify({'error': 'Download not found'}), 404
     
     return jsonify(downloads[download_id])
+
+@app.route('/cancel/<download_id>', methods=['POST'])
+def cancel_download(download_id):
+    """Cancel an active download"""
+    if download_id not in downloads:
+        return jsonify({'error': 'Download not found'}), 404
+    
+    # Kill the process if it's running
+    if download_id in download_processes:
+        try:
+            process = download_processes[download_id]
+            process.terminate()  # Try graceful termination first
+            time.sleep(0.5)
+            if process.poll() is None:  # If still running
+                process.kill()  # Force kill
+            del download_processes[download_id]
+        except:
+            pass
+    
+    # Update status
+    downloads[download_id]['status'] = 'cancelled'
+    downloads[download_id]['progress'] = 'Download cancelled by user'
+    
+    return jsonify({'success': True, 'message': 'Download cancelled'})
 
 @app.route('/download-file/<download_id>')
 def download_file(download_id):
