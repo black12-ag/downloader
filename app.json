@@ -1,0 +1,11 @@
+{
+  "name": "Video Downloader",
+  "description": "Download videos from m3u8 URLs with quality selection",
+  "repository": "https://github.com/black12-ag/downloader",
+  "keywords": ["python", "flask", "video", "downloader", "m3u8", "yt-dlp"],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}
