@@ -248,7 +248,7 @@ def check_formats():
 
 @app.route('/download', methods=['POST'])
 def download():
-    """Start a new download - streams directly to browser"""
+    """Start a new download"""
     data = request.json
     url = data.get('url', '').strip()
     filename = data.get('filename', 'video').strip()
@@ -261,11 +261,25 @@ def download():
     if not filename.endswith('.mp4'):
         filename += '.mp4'
     
-    # Return the URL and filename - browser will call /stream endpoint
-    return jsonify({
-        'stream_url': f'/stream?url={url}&filename={filename}',
-        'filename': filename
-    })
+    # Generate unique download ID
+    download_id = str(uuid.uuid4())
+    
+    # Initialize download status
+    downloads[download_id] = {
+        'status': 'queued',
+        'progress': 'Queued...',
+        'percent': 0,
+        'url': url,
+        'filename': filename,
+        'quality': quality
+    }
+    
+    # Start download in background thread
+    thread = threading.Thread(target=download_video, args=(download_id, url, filename, quality))
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({'download_id': download_id})
 
 @app.route('/stream')
 def stream_video():
