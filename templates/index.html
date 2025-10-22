@@ -464,7 +464,14 @@
                     link.click();
                     document.body.removeChild(link);
                     
-                    alert('✅ Download started! Check your Downloads folder.\n\n⚡ Only using 1x network, not 2x!');
+                    // Show success message without alert
+                    downloadBtn.textContent = '✅ Downloading...';
+                    downloadBtn.style.background = '#00b894';
+                    
+                    setTimeout(() => {
+                        downloadBtn.textContent = '⬇️ Download Video';
+                        downloadBtn.style.background = '';
+                    }, 3000);
                     
                     // Reset form
                     urlInput.value = '';
