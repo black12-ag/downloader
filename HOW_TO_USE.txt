@@ -1,0 +1,71 @@
+╔════════════════════════════════════════════════════════════════╗
+║           ✅ YOUR VIDEO DOWNLOADER IS WORKING!                 ║
+╚════════════════════════════════════════════════════════════════╝
+
+🌐 Your Public URL: https://downloader-96y8.onrender.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 HOW TO USE:
+
+For DIRECT M3U8 URLs (like the one you tested):
+
+1. ✅ Paste the m3u8 URL in the "Video URL" field
+2. ✅ Enter a filename (e.g., "my-video")
+3. ✅ SKIP the "Check Formats" button (not needed for direct streams)
+4. ✅ Select quality from dropdown (Best, 1080p, 720p, etc.)
+5. ✅ Click "Download Video"
+6. ✅ Wait for download to complete
+7. ✅ Click "Download File" button when ready
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 ABOUT "CHECK FORMATS":
+
+The "Check Formats" button is ONLY useful for:
+- YouTube URLs
+- Webpage URLs with multiple quality options
+
+For direct m3u8 streams, you'll see "Found 0 formats" - this is NORMAL!
+Just skip it and click "Download Video" directly.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 EXAMPLE USAGE:
+
+URL: https://eu5.raffaellocdn.net:2223/v3-hls-playback/.../360/index.m3u8
+Filename: game-of-thrones-ep6
+Quality: Best Available
+→ Click "Download Video"
+→ Wait for progress
+→ Click "Download File"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ IMPORTANT NOTES:
+
+1. Direct m3u8 URLs work perfectly - no format check needed
+2. The app is FREE but may sleep after inactivity (wakes in 30 sec)
+3. Downloads happen on the server, then you download from server
+4. Large files may take time - be patient!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ YOUR APP IS LIVE AND WORKING 24/7!
+
+Share this URL with anyone: https://downloader-96y8.onrender.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔄 UPDATES:
+
+I just pushed an update that will:
+- Show a clearer message for direct streams
+- Explain that "0 formats" is normal
+- Make it easier to understand
+
+Render will auto-deploy this in 2-3 minutes!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 ENJOY YOUR VIDEO DOWNLOADER! 🚀
