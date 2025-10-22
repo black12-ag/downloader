@@ -33,7 +33,7 @@ def download_video(download_id, url, filename, quality='best'):
         # The user already selected the quality when they got the m3u8 URL (360, 720, 1080, etc.)
         format_string = 'best'
         
-        # Use yt-dlp to download with selected quality
+        # Use yt-dlp to download with MAXIMUM SPEED settings
         command = [
             'python3', '-m', 'yt_dlp',
             '--no-check-certificate',
@@ -41,6 +41,13 @@ def download_video(download_id, url, filename, quality='best'):
             '-f', format_string,
             '-o', output_template,
             '--merge-output-format', 'mp4',
+            '--concurrent-fragments', '16',  # Download 16 fragments at once (FAST!)
+            '--buffer-size', '16K',  # Larger buffer for faster download
+            '--http-chunk-size', '10M',  # Download in 10MB chunks
+            '--retries', '10',  # Retry failed chunks
+            '--fragment-retries', '10',  # Retry failed fragments
+            '--no-part',  # Don't use .part files (faster)
+            '--no-mtime',  # Don't set file modification time (faster)
             url
         ]
         
