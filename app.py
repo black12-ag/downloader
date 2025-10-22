@@ -38,9 +38,51 @@ def download_video(download_id, url, filename, quality='best'):
         if download_id in download_processes:
             del download_processes[download_id]
 
+def extract_video_url(page_url):
+    """Extract m3u8 or mp4 URL from webpage"""
+    try:
+        import requests
+        import re
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = requests.get(page_url, headers=headers, timeout=10)
+        html = response.text
+        
+        # Look for m3u8 URLs
+        m3u8_pattern = r'https?://[^\s<>"]+?\.m3u8[^\s<>"]*'
+        m3u8_urls = re.findall(m3u8_pattern, html)
+        if m3u8_urls:
+            return m3u8_urls[0]
+        
+        # Look for mp4 URLs
+        mp4_pattern = r'https?://[^\s<>"]+?\.mp4[^\s<>"]*'
+        mp4_urls = re.findall(mp4_pattern, html)
+        if mp4_urls:
+            return mp4_urls[0]
+        
+        return None
+    except Exception as e:
+        print(f"URL extraction error: {e}")
+        return None
+
 def download_video_to_server(download_id, url, filename, quality='best'):
     """Fallback: Download to server if direct download doesn't work"""
     try:
+        # If URL is not a direct video URL, try to extract it
+        if not url.endswith('.m3u8') and not url.endswith('.mp4'):
+            downloads[download_id]['progress'] = 'Extracting video URL from page...'
+            extracted_url = extract_video_url(url)
+            if extracted_url:
+                url = extracted_url
+                downloads[download_id]['progress'] = 'Found video URL! Starting download...'
+            else:
+                downloads[download_id]['status'] = 'error'
+                downloads[download_id]['progress'] = 'Could not find video URL on page. Try right-clicking video and copying direct link.'
+                return
+        
         output_path = DOWNLOAD_DIR / filename
         output_template = str(output_path.with_suffix(''))
         
